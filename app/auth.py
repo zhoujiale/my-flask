@@ -27,7 +27,7 @@ def register():
             try:
                 db.execute(
                     "insert into user (username,password) values (?,?)",
-                    (username,generate_password_hash(password=password))
+                    (username,password)
                 )
                 db.commit()
             except db.IntegrityError:
@@ -53,13 +53,13 @@ def login():
 
         if user is None:
             error = '用户名错误'
-        elif not check_password_hash(user['password'],password=password):
+        elif not user['password'] == password:
             error = '密码错误'    
         
         if error is None:
             session.clear()
             session['user_id'] = user['id']
-            return redirect(url_for('index'))
+            return redirect(url_for('blog.index'))
         
         flash(error)
     return render_template('auth/login.html')
@@ -68,13 +68,12 @@ def login():
 @bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')
-
     if user_id is None:
         g.user = None
     else:
         g.user = get_db().execute(
             'select * from user where id = ?',
-            (user_id)
+            (user_id,)
         ).fetchone()
 
 #退出
